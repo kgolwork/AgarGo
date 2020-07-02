@@ -16,8 +16,13 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		clients:   make(map[uint32]*Client),
-		upgrader:  &websocket.Upgrader{},
 		idManager: managers.NewIdManager(),
+		upgrader: &websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			}},
 	}
 }
 
@@ -32,6 +37,7 @@ func (s *Server) Listen() {
 		client := NewClient(s.idManager.GenerateClientId(), conn)
 
 		s.clients[client.id] = client
+		go client.Listen()
 	}
 
 	http.HandleFunc("/", handler)
